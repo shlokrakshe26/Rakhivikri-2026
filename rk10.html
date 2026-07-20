@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10vi Gurukul - RAKHIVIKRI Billing & Collection Desk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #1e40af; border-radius: 4px; }
+        
+        @media print {
+            body * { visibility: hidden; background: white !important; color: black !important; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+            input, select { border: none !important; appearance: none; -webkit-appearance: none; background: transparent !important; }
+        }
+    </style>
+</head>
+<body class="bg-blue-50/30 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-gradient-to-r from-blue-950 via-blue-800 to-indigo-700 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-2 rounded-full text-blue-800 shadow-inner">
+                    <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wide">10vi GURUKUL</h1>
+                    <p class="text-xs font-semibold tracking-widest text-blue-200 uppercase">✨ Rakhivikri Management System ✨</p>
+                </div>
+            </div>
+            <nav class="flex flex-wrap gap-2">
+                <button onclick="switchTab('home')" id="tab-home" class="nav-btn bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 active-tab"><i class="fa-solid fa-house"></i> Home</button>
+                <button onclick="switchTab('students')" id="tab-students" class="nav-btn bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2"><i class="fa-solid fa-users"></i> Students</button>
+                <button onclick="openNewBill()" id="tab-billing" class="nav-btn bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar"></i> New Bill</button>
+                <button onclick="switchTab('past-bills')" id="tab-past-bills" class="nav-btn bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2"><i class="fa-solid fa-history"></i> Past Bills</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 no-print">
+        
+        <!-- HOME SCREEN -->
+        <section id="screen-home" class="screen-content space-y-6">
+            <div class="bg-gradient-to-br from-blue-800 to-blue-950 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="absolute right-0 bottom-0 opacity-10 text-9xl transform translate-x-10 translate-y-10"><i class="fa-solid fa-store"></i></div>
+                <h2 class="text-3xl font-bold mb-2">Welcome to 10vi Rakhivikri Dashboard</h2>
+                <p class="text-blue-100 max-w-xl">Track sales, manage class receipts, monitor student profiles, and maintain standard professional paper bills seamlessly.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-700 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Sales Billed</p>
+                        <h3 id="stat-revenue" class="text-2xl font-black text-gray-800 mt-1">₹0.00</h3>
+                    </div>
+                    <div class="text-blue-700 text-2xl bg-blue-50 p-2.5 rounded-xl"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-indigo-600 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Cash Collected</p>
+                        <h3 id="stat-collected" class="text-2xl font-black text-indigo-700 mt-1">₹0.00</h3>
+                    </div>
+                    <div class="text-indigo-700 text-2xl bg-indigo-50 p-2.5 rounded-xl"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-cyan-800 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Remaining Balance</p>
+                        <h3 id="stat-pending" class="text-2xl font-black text-cyan-800 mt-1">₹0.00</h3>
+                    </div>
+                    <div class="text-cyan-800 text-2xl bg-cyan-50 p-2.5 rounded-xl"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Invoices</p>
+                        <h3 id="stat-bills" class="text-2xl font-black text-gray-800 mt-1">0</h3>
+                    </div>
+                    <div class="text-blue-500 text-2xl bg-blue-50 p-2.5 rounded-xl"><i class="fa-solid fa-receipt"></i></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-700 mb-2 flex items-center gap-2"><i class="fa-solid fa-chart-column text-blue-700"></i> Class Performance Chart (Billed vs. Collected)</h3>
+                <p class="text-xs text-gray-400 mb-4">Real-time status tracking for all students assigned to the standard 10vi Gurukul sales month.</p>
+                <div id="class-chart-wrapper" class="relative w-full h-[320px] flex items-center justify-center bg-gray-50 rounded-lg">
+                    <canvas id="classChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2"><i class="fa-solid fa-bolt text-blue-700"></i> Quick Operations</h3>
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="openNewBill()" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-5 py-3 rounded-xl transition shadow-md flex items-center gap-2"><i class="fa-solid fa-plus"></i> Generate Fresh Paper Bill</button>
+                    <button onclick="switchTab('students')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-3 rounded-xl transition flex items-center gap-2"><i class="fa-solid fa-search"></i> Look up Student Profiles & Log Collections</button>
+                    <button id="btn-connect-folder" onclick="connectBackupFolder()" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold px-5 py-3 rounded-xl transition shadow-md flex items-center gap-2"><i class="fa-solid fa-folder-open text-blue-400"></i> Link Local Folder Backup</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STUDENTS PROFILE SCREEN -->
+        <section id="screen-students" class="screen-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-1/3 bg-white p-4 rounded-xl shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <h3 class="font-bold text-lg text-gray-700">10vi Gurukul Roll</h3>
+                        <span class="bg-blue-100 text-blue-900 text-xs font-bold px-2 py-1 rounded-full"><span id="student-count-badge">0</span> Students</span>
+                    </div>
+                    <div class="space-y-2 max-h-[500px] overflow-y-auto pr-1" id="student-list-container"></div>
+                </div>
+                
+                <div class="w-full md:w-2/3 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between" id="profile-card-view">
+                    <div id="profile-active-state" class="hidden space-y-6">
+                        <div class="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-blue-700 text-white rounded-full flex items-center justify-center font-black text-xl shadow-md" id="p-avatar">S</div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-gray-800" id="p-name">Student Name</h3>
+                                    <p class="text-sm text-gray-500 font-medium">Class: <span class="text-blue-700 font-bold">10vi Gurukul</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="bg-gray-50 p-3.5 rounded-lg border border-gray-100">
+                                <span class="text-[11px] font-bold text-gray-400 block uppercase tracking-wider">Total Handed (Billed)</span>
+                                <span class="text-xl font-black text-gray-700 block mt-0.5" id="p-total-sales">₹0.00</span>
+                            </div>
+                            <div class="bg-indigo-50/50 p-3.5 rounded-lg border border-indigo-100">
+                                <span class="text-[11px] font-bold text-blue-700 block uppercase tracking-wider">Total Cash Collected</span>
+                                <span class="text-xl font-black text-blue-700 block mt-0.5" id="p-total-collected">₹0.00</span>
+                            </div>
+                            <div class="bg-blue-50/50 p-3.5 rounded-lg border border-blue-100">
+                                <span class="text-[11px] font-bold text-cyan-800 block uppercase tracking-wider">Pending Balance</span>
+                                <span class="text-xl font-black text-cyan-800 block mt-0.5" id="p-pending-balance">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Log Cash Collected From Student</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                                    <input type="number" id="p-collect-input" min="0" placeholder="Enter collected amount turning in" class="w-full bg-white border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-700">
+                                </div>
+                            </div>
+                            <div class="pt-5">
+                                <button onclick="submitStudentCollection()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center justify-center gap-2"><i class="fa-solid fa-square-plus"></i> Log Collection</button>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-xl p-4 bg-white">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Collection Milestones History Chart</span>
+                            <div id="student-chart-wrapper" class="relative w-full h-[160px] flex items-center justify-center bg-gray-50 rounded-lg">
+                                <canvas id="studentChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-gray-700 mb-2 border-b pb-1 text-sm uppercase tracking-wide">Saved Bills Activity History</h4>
+                            <div class="overflow-x-auto max-h-[260px] overflow-y-auto border rounded-lg">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-gray-100 text-gray-600 font-bold sticky top-0 shadow-sm">
+                                            <th class="p-2.5">Bill No.</th>
+                                            <th class="p-2.5">Customer</th>
+                                            <th class="p-2.5">Date</th>
+                                            <th class="p-2.5 text-right">Grand Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="p-bill-history-rows" class="divide-y divide-gray-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="profile-empty-state" class="flex flex-col items-center justify-center text-center py-24 text-gray-400 space-y-3">
+                        <i class="fa-solid fa-address-card text-6xl text-gray-200"></i>
+                        <p class="font-medium text-gray-500">Select a student from the sidebar list to log collections, view histories, or inspect active graphs.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW BILL GENERATOR SCREEN -->
+        <section id="screen-billing" class="screen-content hidden space-y-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4 border border-gray-100">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Select Active Seller Student</label>
+                    <select id="bill-student-select" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-700"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Customer / Client Name</label>
+                    <input type="text" id="bill-customer-name" placeholder="Enter buyer's name" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-700">
+                </div>
+                <div class="flex items-end gap-2">
+                    <button onclick="saveActiveBill()" class="flex-grow bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-sm"><i class="fa-solid fa-cloud-arrow-up"></i> Save Bill</button>
+                    <button onclick="triggerPrint()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-sm"><i class="fa-solid fa-print"></i> Print Bill</button>
+                </div>
+            </div>
+
+            <div id="receipt-print-area" class="bg-white p-6 sm:p-8 rounded-xl shadow-md border-2 border-gray-200 max-w-4xl mx-auto text-black font-serif">
+                <div class="border-b-4 border-double border-black pb-4 text-center space-y-1">
+                    <h2 class="text-3xl font-black tracking-tight font-sans">१०वी गुरुकुल राखी विक्री (RAKHIVIKRI)</h2>
+                    <p class="text-sm font-sans tracking-widest font-bold text-gray-700">GURUKUL EDUCATION FOUNDATION CENTER</p>
+                    <p class="text-xs italic text-gray-600">Pure Handmade Festive Rakhis Crafted by Students</p>
+                </div>
+
+                <div class="grid grid-cols-2 py-4 text-sm font-sans gap-2">
+                    <div class="space-y-1">
+                        <p><span class="font-bold">INVOICE NO:</span> <span id="lbl-invoice-no" class="font-mono">RV-000</span></p>
+                        <p><span class="font-bold">STUDENT SELLER:</span> <span id="lbl-student" class="underline decoration-dotted font-medium">Not Selected</span></p>
+                    </div>
+                    <div class="space-y-1 text-right">
+                        <p><span class="font-bold">DATE:</span> <span id="lbl-date" class="font-mono">--/--/----</span></p>
+                        <p><span class="font-bold">CUSTOMER:</span> <span id="lbl-customer" class="underline decoration-dotted font-medium">Cash Sale</span></p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse border border-black font-sans text-sm">
+                        <thead>
+                            <tr class="bg-gray-100 border-b border-black text-center font-bold">
+                                <th class="border-r border-black p-1.5 w-12 text-center">SR.</th>
+                                <th class="border-r border-black p-1.5">ITEM DESCRIPTION</th>
+                                <th class="border-r border-black p-1.5 w-24 text-right">RATE (₹)</th>
+                                <th class="border-r border-black p-1.5 w-20 text-center">QTY</th>
+                                <th class="p-1.5 w-28 text-right">AMOUNT (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receipt-table-body"></tbody>
+                        <tfoot>
+                            <tr class="border-t-2 border-black font-black bg-gray-50">
+                                <td colspan="3" class="border-r border-black p-2 text-right uppercase tracking-wider text-xs">Grand Total Liability:</td>
+                                <td id="lbl-total-qty" class="border-r border-black p-2 text-center font-mono">0</td>
+                                <td id="lbl-grand-total" class="p-2 text-right text-base font-mono bg-blue-100/40">₹0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-dashed border-gray-400 flex justify-between items-end text-xs font-sans">
+                    <div class="space-y-1">
+                        <p class="font-bold">Terms & Affirmations:</p>
+                        <p>1. Items produced by 10vi Standard Gurukul Kids.</p>
+                        <p>2. Funds raised go directly to student cultural activity programs.</p>
+                    </div>
+                    <div class="text-center w-40 space-y-8">
+                        <div class="border-b border-black w-full"></div>
+                        <p class="font-bold text-gray-600 uppercase tracking-widest text-[10px]">Authorized Signatory</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAST RECORDS SCREEN -->
+        <section id="screen-past-bills" class="screen-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h3 class="font-bold text-lg text-gray-700">Archived Sales Records Ledger</h3>
+                    <button onclick="clearAllDataLog()" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-trash-can"></i> Factory Reset DB</button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold uppercase tracking-wider text-xs">
+                                <th class="p-3">Bill ID</th>
+                                <th class="p-3">Date Timestamp</th>
+                                <th class="p-3">Seller (Student)</th>
+                                <th class="p-3">Buyer (Customer)</th>
+                                <th class="p-3 text-center">Items Qty</th>
+                                <th class="p-3 text-right">Grand Settlement</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="past-bills-table-body" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+                <div id="past-bills-empty-state" class="hidden flex flex-col items-center justify-center text-center py-16 text-gray-400 space-y-2">
+                    <i class="fa-solid fa-box-open text-5xl text-gray-200"></i>
+                    <p class="font-medium text-gray-500">No transactions recorded in LocalStorage database yet.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-900 text-gray-400 py-3 text-center text-xs border-t border-gray-800 font-medium no-print">
+        <p>© 10vi Gurukul Activity Desk. Persistent LocalStorage Infrastructure Operational.</p>
+    </footer>
+
+    <script>
+        const INITIAL_STUDENTS = [
+            { id: "S1", name: "Ananya Ahire", collections: [] },
+            { id: "S2", name: "Sayali Bormale", collections: [] },
+            { id: "S3", name: "Shraddha Chaudhari", collections: [] },
+            { id: "S4", name: "Sharvari Dighe", collections: [] },
+            { id: "S5", name: "Anandi Kulkarni", collections: [] },
+            { id: "S6", name: "Arya Narkhede", collections: [] },
+            { id: "S7", name: "Gatha Kalate", collections: [] },
+            { id: "S8", name: "Indrakshi Niturkar", collections: [] },
+            { id: "S9", name: "Swasti Rahinj", collections: [] },
+            { id: "S10", name: "Rashi Rokade", collections: [] },
+            { id: "S11", name: "Riddhi Shimpi", collections: [] },
+            { id: "S12", name: "Gargi Talole", collections: [] },
+            { id: "S13", name: "Swara Vyapari", collections: [] },
+            { id: "S14", name: "Saumya Walunjkar", collections: [] },
+            { id: "S15", name: "Sarvadnya Waikar", collections: [] },
+            { id: "S16", name: "Shivanjali Yadav", collections: [] },
+            { id: "S17", name: "Shaurya Bhavar", collections: [] },
+            { id: "S18", name: "Arnav Chapolikar", collections: [] },
+            { id: "S19", name: "Ruchir Chaudhari", collections: [] },
+            { id: "S20", name: "Amey Chavandke", collections: [] },
+            { id: "S21", name: "Neel Dumbare", collections: [] },
+            { id: "S22", name: "Arjun Ghule", collections: [] },
+            { id: "S23", name: "Kanad Godse", collections: [] },
+            { id: "S24", name: "Arnav Jadhav", collections: [] },
+            { id: "S25", name: "Archis Kelkar", collections: [] },
+            { id: "S26", name: "Vishwesh Khairnar", collections: [] },
+            { id: "S27", name: "Aradhya Pachpute", collections: [] },
+            { id: "S28", name: "Amey Pansare", collections: [] },
+            { id: "S29", name: "Akshaj Pathak", collections: [] },
+            { id: "S30", name: "Nachiket Prabhune", collections: [] },
+            { id: "S31", name: "Sumit Raut", collections: [] },
+            { id: "S32", name: "Jaideep Shinde", collections: [] },
+            { id: "S33", name: "Adinath Tarkunde", collections: [] },
+            { id: "S34", name: "Shree Taralekar", collections: [] },
+            { id: "S35", name: "Achintya Varadappa", collections: [] }
+        ];
+
+        let students = [];
+        let bills = [];
+        let currentEditingBillId = null;
+        let activeProfileStudentId = null; 
+        let dirHandle = null; 
+
+        let classChartInstance = null;
+        let studentChartInstance = null;
+
+        window.addEventListener("DOMContentLoaded", () => {
+            let accessGranted = false;
+            while (!accessGranted) {
+                let pwd = prompt("Enter Password to access the 10vi Rakhivikri System:");
+                if (pwd === null) {
+                    document.body.innerHTML = `
+                        <div class="min-h-screen flex items-center justify-center bg-gray-900 text-white flex-col">
+                            <i class="fa-solid fa-lock text-6xl text-blue-700 mb-4"></i>
+                            <h1 class="text-3xl font-bold text-blue-700 mb-2">Access Denied</h1>
+                            <p class="text-gray-400">Refresh the page to try again.</p>
+                        </div>
+                    `;
+                    return; 
+                } else if (pwd === "10@rk") {
+                    accessGranted = true; 
+                } else {
+                    alert("Incorrect Password! Please try again.");
+                }
+            }
+
+            loadDatabase();
+            initFormMetaListeners();
+            buildStructured20ReceiptRows();
+            switchTab('home');
+        });
+
+        function loadDatabase() {
+            try {
+                const savedStudents = localStorage.getItem("gurukul10_students");
+                const savedBills = localStorage.getItem("gurukul10_bills");
+
+                if(savedStudents) {
+                    students = JSON.parse(savedStudents);
+                    students.forEach(s => { if(!s.collections) s.collections = []; });
+                } else {
+                    students = INITIAL_STUDENTS;
+                    localStorage.setItem("gurukul10_students", JSON.stringify(students));
+                }
+
+                if(savedBills) {
+                    bills = JSON.parse(savedBills);
+                } else {
+                    bills = [];
+                    localStorage.setItem("gurukul10_bills", JSON.stringify(bills));
+                }
+            } catch (e) {
+                console.error("Database initialization error.", e);
+                students = INITIAL_STUDENTS;
+                bills = [];
+            }
+
+            populateStudentDropdowns();
+            renderStudentList();
+            refreshGlobalStats();
+        }
+
+        function syncStudentsToLocalStorage() {
+            localStorage.setItem("gurukul10_students", JSON.stringify(students));
+            renderStudentList();
+            refreshGlobalStats();
+            if(activeProfileStudentId) showStudentProfile(activeProfileStudentId);
+            renderClassWideChart();
+            saveToLinkedLocalFolder(); 
+        }
+
+        function syncBillsToLocalStorage() {
+            localStorage.setItem("gurukul10_bills", JSON.stringify(bills));
+            refreshGlobalStats();
+            renderStudentList();
+            if (activeProfileStudentId) showStudentProfile(activeProfileStudentId);
+            renderClassWideChart();
+            saveToLinkedLocalFolder(); 
+        }
+
+        async function connectBackupFolder() {
+            try {
+                dirHandle = await window.showDirectoryPicker();
+                const btn = document.getElementById("btn-connect-folder");
+                if(btn) {
+                    btn.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Folder Synced`;
+                    btn.className = "bg-blue-950 hover:bg-blue-900 text-white font-semibold px-5 py-3 rounded-xl transition shadow-md flex items-center gap-2";
+                }
+                
+                try {
+                    const fileHandle = await dirHandle.getFileHandle("rakhivikri_backup_10.json");
+                    const file = await fileHandle.getFile();
+                    const contentText = await file.text();
+                    const backupData = JSON.parse(contentText);
+                    
+                    if(backupData.students && backupData.bills) {
+                        if(confirm("Found an existing data backup file in this folder. Do you want to load its data into this page?")) {
+                            students = backupData.students;
+                            bills = backupData.bills;
+                            localStorage.setItem("gurukul10_students", JSON.stringify(students));
+                            localStorage.setItem("gurukul10_bills", JSON.stringify(bills));
+                            loadDatabase();
+                            switchTab('home');
+                            return;
+                        }
+                    }
+                } catch(e) {
+                    console.log("Creating brand new continuous save tracking matrix.");
+                }
+
+                saveToLinkedLocalFolder();
+                alert("📂 Connected Successfully! Dynamic disk mirroring live.");
+            } catch (err) {
+                console.error(err);
+                alert("Folder syncing declined.");
+            }
+        }
+
+        async function saveToLinkedLocalFolder() {
+            if (!dirHandle) return;
+            try {
+                const fileHandle = await dirHandle.getFileHandle("rakhivikri_backup_10.json", { create: true });
+                const writableStream = await fileHandle.createWritable();
+                const masterDataPayload = {
+                    students: students,
+                    bills: bills,
+                    backupTimestamp: new Date().toLocaleString('en-IN')
+                };
+                await writableStream.write(JSON.stringify(masterDataPayload, null, 4));
+                await writableStream.close();
+            } catch (err) {
+                console.error("Physical engine storage block missing write rights: ", err);
+            }
+        }
+
+        function autoPopulateRateFromDesc(rowElement) {
+            const descInput = rowElement.querySelector('.row-item-desc');
+            const rateInput = rowElement.querySelector('.row-rate');
+            if (!descInput || !rateInput) return;
+
+            const txt = descInput.value.trim();
+            const numberMatch = txt.match(/\d+(\.\d+)?/);
+            if (numberMatch) {
+                rateInput.value = numberMatch[0];
+            }
+        }
+
+        function buildStructured20ReceiptRows() {
+            const tbody = document.getElementById("receipt-table-body");
+            if (!tbody) return;
+            tbody.innerHTML = ""; 
+
+            for(let i = 1; i <= 20; i++) {
+                const tr = document.createElement("tr");
+                tr.className = "border-b border-black hover:bg-gray-50/60 transition duration-150";
+                tr.innerHTML = `
+                    <td class="border-r border-black p-1 text-center font-mono text-xs font-bold text-gray-400">${i}</td>
+                    <td class="border-r border-black p-1">
+                        <input type="text" placeholder="Rakhi description..." class="row-item-desc w-full px-1.5 py-1 text-sm bg-transparent border border-transparent rounded focus:border-blue-300 focus:bg-white focus:outline-none transition">
+                    </td>
+                    <td class="border-r border-black p-1">
+                        <input type="number" min="0" step="0.01" placeholder="0.00" class="row-rate w-full text-right px-1.5 py-1 text-sm font-mono bg-transparent border border-transparent rounded focus:border-blue-300 focus:bg-white focus:outline-none transition">
+                    </td>
+                    <td class="border-r border-black p-1">
+                        <input type="number" min="0" placeholder="0" class="row-qty w-full text-center px-1.5 py-1 text-sm font-mono bg-transparent border border-transparent rounded focus:border-blue-300 focus:bg-white focus:outline-none transition">
+                    </td>
+                    <td class="p-1 text-right font-mono font-bold text-sm bg-gray-50/30 pr-3 row-amount-display">₹0.00</td>
+                `;
+                
+                tr.querySelector('.row-item-desc').addEventListener('input', () => {
+                    autoPopulateRateFromDesc(tr);
+                    computeReceiptRowLine(tr);
+                });
+                tr.querySelector('.row-rate').addEventListener('input', () => computeReceiptRowLine(tr));
+                tr.querySelector('.row-qty').addEventListener('input', () => computeReceiptRowLine(tr));
+                
+                tbody.appendChild(tr);
+            }
+        }
+
+        function computeReceiptRowLine(rowElement) {
+            const rateInput = rowElement.querySelector('.row-rate');
+            const qtyInput = rowElement.querySelector('.row-qty');
+            const displayCell = rowElement.querySelector('.row-amount-display');
+
+            const rate = parseFloat(rateInput.value) || 0;
+            const qty = parseInt(qtyInput.value) || 0;
+            
+            const lineValue = rate * qty;
+            displayCell.textContent = lineValue > 0 ? `₹${lineValue.toFixed(2)}` : "₹0.00";
+            aggregateGrandInvoiceTotals();
+        }
+
+        function aggregateGrandInvoiceTotals() {
+            const rows = document.querySelectorAll("#receipt-table-body tr");
+            let calculatedTotalSum = 0;
+            let calculatedTotalQty = 0;
+
+            rows.forEach(row => {
+                const rateInput = row.querySelector('.row-rate');
+                const qtyInput = row.querySelector('.row-qty');
+                const rate = rateInput ? (parseFloat(rateInput.value) || 0) : 0;
+                const qty = qtyInput ? (parseInt(qtyInput.value) || 0) : 0;
+                calculatedTotalSum += (rate * qty);
+                calculatedTotalQty += qty;
+            });
+
+            const qtyLabel = document.getElementById("lbl-total-qty");
+            const totalLabel = document.getElementById("lbl-grand-total");
+            if (qtyLabel) qtyLabel.textContent = calculatedTotalQty;
+            if (totalLabel) totalLabel.textContent = `₹${calculatedTotalSum.toFixed(2)}`;
+        }
+
+        function initFormMetaListeners() {
+            const studentSelect = document.getElementById("bill-student-select");
+            const customerInput = document.getElementById("bill-customer-name");
+
+            if(studentSelect) {
+                studentSelect.addEventListener("change", (e) => {
+                    const text = e.target.options[e.target.selectedIndex].text;
+                    const lbl = document.getElementById("lbl-student");
+                    if (lbl) lbl.textContent = e.target.value ? text : "Not Selected";
+                });
+            }
+
+            if(customerInput) {
+                customerInput.addEventListener("input", (e) => {
+                    const lbl = document.getElementById("lbl-customer");
+                    if (lbl) lbl.textContent = e.target.value.trim() || "Cash Sale";
+                });
+            }
+
+            const today = new Date();
+            const dateLbl = document.getElementById("lbl-date");
+            if (dateLbl) dateLbl.textContent = today.toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'});
+        }
+
+        function populateStudentDropdowns() {
+            const select = document.getElementById("bill-student-select");
+            if(!select) return;
+            select.innerHTML = `<option value="">-- Choose Student Seller --</option>`;
+            students.forEach(std => {
+                select.innerHTML += `<option value="${std.id}">${std.name}</option>`;
+            });
+        }
+
+        function switchTab(targetTabId) {
+            document.querySelectorAll(".screen-content").forEach(el => el.classList.add("hidden"));
+            document.querySelectorAll(".nav-btn").forEach(el => {
+                el.classList.remove("bg-white/20", "active-tab");
+                el.classList.add("bg-white/10");
+            });
+
+            const screen = document.getElementById(`screen-${targetTabId}`);
+            const tabBtn = document.getElementById(`tab-${targetTabId}`);
+            
+            if(screen) screen.classList.remove("hidden");
+            if(tabBtn) tabBtn.classList.add("bg-white/20", "active-tab");
+
+            if (targetTabId === 'past-bills') renderPastBillsLedger();
+            if (targetTabId === 'students') {
+                renderStudentList();
+                if (activeProfileStudentId) {
+                    showStudentProfile(activeProfileStudentId);
+                }
+            }
+            if (targetTabId === 'home') renderClassWideChart();
+        }
+
+        function openNewBill() {
+            currentEditingBillId = "RV-" + Date.now().toString().slice(-6);
+            
+            const invoiceNoLbl = document.getElementById("lbl-invoice-no");
+            const dateLbl = document.getElementById("lbl-date");
+            const studentSelect = document.getElementById("bill-student-select");
+            const customerInput = document.getElementById("bill-customer-name");
+            const studentLbl = document.getElementById("lbl-student");
+            const customerLbl = document.getElementById("lbl-customer");
+
+            if (invoiceNoLbl) invoiceNoLbl.textContent = currentEditingBillId;
+            if (studentSelect) studentSelect.value = "";
+            if (customerInput) customerInput.value = "";
+            if (studentLbl) studentLbl.textContent = "Not Selected";
+            if (customerLbl) customerLbl.textContent = "Cash Sale";
+            
+            const today = new Date();
+            if (dateLbl) dateLbl.textContent = today.toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'});
+
+            buildStructured20ReceiptRows();
+            aggregateGrandInvoiceTotals();
+            switchTab('billing');
+        }
+
+        function saveActiveBill() {
+            const studentSelect = document.getElementById("bill-student-select");
+            const customerInput = document.getElementById("bill-customer-name");
+            
+            const studentId = studentSelect ? studentSelect.value : "";
+            const studentName = studentSelect ? (studentSelect.options[studentSelect.selectedIndex]?.text || "") : "";
+            const customerName = customerInput ? (customerInput.value.trim() || "Cash Sale") : "Cash Sale";
+            
+            if(!studentId) {
+                alert("⚠️ Validation Error: Assign this bill to a student seller!");
+                return;
+            }
+
+            const itemsRowsData = [];
+            const rows = document.querySelectorAll("#receipt-table-body tr");
+            let computedGrandTotal = 0;
+
+            rows.forEach(row => {
+                const descInput = row.querySelector('.row-item-desc');
+                const rateInput = row.querySelector('.row-rate');
+                const qtyInput = row.querySelector('.row-qty');
+
+                const desc = descInput ? descInput.value.trim() : "";
+                const rate = rateInput ? (parseFloat(rateInput.value) || 0) : 0;
+                const qty = qtyInput ? (parseInt(qtyInput.value) || 0) : 0;
+
+                if (desc || qty > 0) {
+                    itemsRowsData.push({ desc, rate, qty, amt: rate * qty });
+                    computedGrandTotal += (rate * qty);
+                }
+            });
+
+            if(itemsRowsData.length === 0 || computedGrandTotal === 0) {
+                alert("⚠️ Validation Error: Cannot save an empty bill.");
+                return;
+            }
+
+            const finalBillId = currentEditingBillId || "RV-" + Date.now().toString().slice(-6);
+            const index = bills.findIndex(b => b.id === finalBillId);
+
+            const billRecordPayload = {
+                id: finalBillId,
+                date: document.getElementById("lbl-date")?.textContent || new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'}),
+                studentId,
+                studentName,
+                customerName,
+                items: itemsRowsData,
+                totalAmount: computedGrandTotal
+            };
+
+            if(index > -1) {
+                bills[index] = billRecordPayload;
+            } else {
+                bills.unshift(billRecordPayload);
+            }
+
+            activeProfileStudentId = studentId;
+            syncBillsToLocalStorage();
+            
+            alert(`🎉 Success! Bill reference ${finalBillId} saved.`);
+            currentEditingBillId = null;
+            
+            switchTab('students');
+            showStudentProfile(studentId);
+        }
+
+        function submitStudentCollection() {
+            if(!activeProfileStudentId) return;
+            const inputEl = document.getElementById("p-collect-input");
+            const amount = parseFloat(inputEl ? inputEl.value : 0) || 0;
+
+            if(amount <= 0) {
+                alert("⚠️ Enter a valid positive collection value!");
+                return;
+            }
+
+            const studentIndex = students.findIndex(s => s.id === activeProfileStudentId);
+            if(studentIndex > -1) {
+                const timestamp = new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit'});
+                students[studentIndex].collections.push({
+                    date: timestamp,
+                    amount: amount
+                });
+                
+                if(inputEl) inputEl.value = "";
+                syncStudentsToLocalStorage();
+                alert(`💰 Logged cash collection of ₹${amount.toFixed(2)} successfully.`);
+            }
+        }
+
+        function renderPastBillsLedger() {
+            const tbody = document.getElementById("past-bills-table-body");
+            const emptyState = document.getElementById("past-bills-empty-state");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if(!bills || bills.length === 0) {
+                if (emptyState) emptyState.classList.remove("hidden");
+                return;
+            }
+            if (emptyState) emptyState.classList.add("hidden");
+
+            bills.forEach(bill => {
+                const totalAmt = bill.totalAmount || 0;
+                const itemsQty = bill.items ? bill.items.reduce((sum, i) => sum + (i.qty || 0), 0) : 0;
+                
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-gray-50 transition duration-150";
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-blue-800">
+                        <button onclick="loadBillIntoEditor('${bill.id}')" class="text-blue-800 hover:text-blue-950 hover:underline font-black text-left focus:outline-none">${bill.id || 'N/A'}</button>
+                    </td>
+                    <td class="p-3 text-gray-500">${bill.date || '--/--/----'}</td>
+                    <td class="p-3 font-semibold text-gray-700">${bill.studentName || 'Unknown'}</td>
+                    <td class="p-3 text-gray-600">${bill.customerName || 'Cash Sale'}</td>
+                    <td class="p-3 text-center font-bold">${itemsQty}</td>
+                    <td class="p-3 text-right font-mono font-black text-cyan-800">₹${totalAmt.toFixed(2)}</td>
+                    <td class="p-3 text-center flex justify-center gap-2">
+                        <button onclick="loadBillIntoEditor('${bill.id}')" class="text-xs bg-blue-700 hover:bg-blue-800 text-white font-bold px-2 py-1 rounded transition flex items-center gap-1"><i class="fa-solid fa-folder-open"></i> Load</button>
+                        <button onclick="deleteBillItem('${bill.id}')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold px-2 py-1 rounded transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function loadBillIntoEditor(billId) {
+            const bill = bills.find(b => b.id === billId);
+            if(!bill) return;
+
+            currentEditingBillId = bill.id;
+            
+            const invoiceNoLbl = document.getElementById("lbl-invoice-no");
+            const dateLbl = document.getElementById("lbl-date");
+            const studentSelect = document.getElementById("bill-student-select");
+            const studentLbl = document.getElementById("lbl-student");
+            const customerInput = document.getElementById("bill-customer-name");
+            const customerLbl = document.getElementById("lbl-customer");
+
+            if (invoiceNoLbl) invoiceNoLbl.textContent = bill.id;
+            if (dateLbl) dateLbl.textContent = bill.date || '';
+            if (studentSelect) studentSelect.value = bill.studentId || '';
+            if (studentLbl) studentLbl.textContent = bill.studentName || 'Not Selected';
+            if (customerInput) customerInput.value = bill.customerName || '';
+            if (customerLbl) customerLbl.textContent = bill.customerName || 'Cash Sale';
+
+            buildStructured20ReceiptRows();
+            const rows = document.querySelectorAll("#receipt-table-body tr");
+            
+            if (bill.items) {
+                bill.items.forEach((item, index) => {
+                    if(rows[index]) {
+                        const descInput = rows[index].querySelector('.row-item-desc');
+                        const rateInput = rows[index].querySelector('.row-rate');
+                        const qtyInput = rows[index].querySelector('.row-qty');
+                        
+                        if (descInput) descInput.value = item.desc || '';
+                        if (rateInput) rateInput.value = item.rate || '';
+                        if (qtyInput) qtyInput.value = item.qty || '';
+                        
+                        computeReceiptRowLine(rows[index]);
+                    }
+                });
+            }
+
+            switchTab('billing');
+        }
+
+        function deleteBillItem(billId) {
+            if(confirm(`Are you certain you want to remove Bill Record lines attached to ${billId}?`)) {
+                bills = bills.filter(b => b.id !== billId);
+                syncBillsToLocalStorage();
+                renderPastBillsLedger();
+            }
+        }
+
+        function renderStudentList() {
+            const container = document.getElementById("student-list-container");
+            const badge = document.getElementById("student-count-badge");
+            if (!container) return;
+            if (badge) badge.textContent = students.length;
+            container.innerHTML = "";
+
+            students.forEach(std => {
+                const stdBills = bills ? bills.filter(b => b.studentId === std.id || (b.studentName && b.studentName.toLowerCase() === std.name.toLowerCase())) : [];
+                const salesSum = stdBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+                const colSum = std.collections ? std.collections.reduce((sum, c) => sum + c.amount, 0) : 0;
+                const bal = salesSum - colSum;
+
+                const div = document.createElement("div");
+                div.className = `p-3 rounded-lg border cursor-pointer flex justify-between items-center transition duration-150 ${activeProfileStudentId === std.id ? 'border-blue-600 bg-blue-50/60' : 'border-gray-100 bg-gray-50/50 hover:bg-blue-50/20'}`;
+                div.onclick = () => showStudentProfile(std.id);
+                div.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-800 to-indigo-600 text-white font-bold rounded-full flex items-center justify-center text-xs shadow-sm">${std.name.charAt(0)}</div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">${std.name}</h4>
+                            <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Bal: ₹${bal.toFixed(0)}</p>
+                        </div>
+                    </div>
+                    <span class="font-mono text-xs font-black text-cyan-800 bg-white px-2 py-1 rounded shadow-sm border border-gray-100">₹${colSum.toFixed(0)}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function showStudentProfile(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if(!student) return;
+
+            activeProfileStudentId = studentId;
+
+            const emptyState = document.getElementById("profile-empty-state");
+            const activeState = document.getElementById("profile-active-state");
+            
+            if (emptyState) emptyState.classList.add("hidden");
+            if (activeState) activeState.classList.remove("hidden");
+
+            const stdBills = bills ? bills.filter(b => b.studentId === studentId || (b.studentName && b.studentName.toLowerCase() === student.name.toLowerCase())) : [];
+            const salesSum = stdBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+            const colSum = student.collections ? student.collections.reduce((sum, c) => sum + c.amount, 0) : 0;
+            const remainingBalance = salesSum - colSum;
+
+            document.getElementById("p-avatar").textContent = student.name.charAt(0);
+            document.getElementById("p-name").textContent = student.name;
+            document.getElementById("p-total-sales").textContent = `₹${salesSum.toFixed(2)}`;
+            document.getElementById("p-total-collected").textContent = `₹${colSum.toFixed(2)}`;
+            
+            const balLabel = document.getElementById("p-pending-balance");
+            balLabel.textContent = `₹${remainingBalance.toFixed(2)}`;
+            
+            const tbody = document.getElementById("p-bill-history-rows");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            
+            if(stdBills.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-xs italic text-gray-400">No transactions recorded for this student.</td></tr>`;
+            } else {
+                stdBills.forEach(b => {
+                    const amt = b.totalAmount || 0;
+                    tbody.innerHTML += `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50/80">
+                            <td class="p-2.5 font-mono font-bold text-blue-700">
+                                <button onclick="loadBillIntoEditor('${b.id}')" class="text-blue-700 hover:text-blue-950 hover:underline font-bold text-left focus:outline-none">${b.id || 'N/A'}</button>
+                            </td>
+                            <td class="p-2.5 text-gray-600">${b.customerName || 'Cash Sale'}</td>
+                            <td class="p-2.5 text-xs text-gray-400">${b.date || '--/--/----'}</td>
+                            <td class="p-2.5 text-right font-mono font-bold text-cyan-800">₹${amt.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            renderStudentTrendChart(student);
+        }
+
+        function renderStudentTrendChart(student) {
+            const canvas = document.getElementById("studentChart");
+            if(!canvas) return;
+            const ctx = canvas.getContext("2d");
+
+            if (typeof Chart === 'undefined') {
+                const wrapper = document.getElementById("student-chart-wrapper");
+                if (wrapper) wrapper.innerHTML = `<div class="text-xs text-gray-400 italic"><i class="fa-solid fa-wifi-slash"></i> Chart offline (CDN Blocked)</div>`;
+                return;
+            }
+
+            if (studentChartInstance) {
+                studentChartInstance.destroy();
+            }
+
+            const history = student.collections || [];
+            let chartLabels = [];
+            let chartData = [];
+            let runningTotal = 0;
+
+            if(history.length === 0) {
+                chartLabels = ["Start"];
+                chartData = [0];
+            } else {
+                history.forEach((c, idx) => {
+                    chartLabels.push(c.date || `Tx ${idx+1}`);
+                    runningTotal += c.amount;
+                    chartData.push(runningTotal);
+                });
+            }
+
+            studentChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Total Collected Progress (₹)',
+                        data: chartData,
+                        borderColor: '#1d4ed8',
+                        backgroundColor: 'rgba(29, 78, 216, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#1d4ed8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderClassWideChart() {
+            const canvas = document.getElementById("classChart");
+            if(!canvas) return;
+            const ctx = canvas.getContext("2d");
+
+            if (typeof Chart === 'undefined') {
+                const wrapper = document.getElementById("class-chart-wrapper");
+                if (wrapper) wrapper.innerHTML = `<div class="text-sm text-gray-400 italic font-sans flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-blue-700"></i> Chart preview unavailable offline (Billed vs Collected numbers are safe in tables below)</div>`;
+                return;
+            }
+
+            if (classChartInstance) {
+                classChartInstance.destroy();
+            }
+
+            const names = [];
+            const billedAmounts = [];
+            const collectedAmounts = [];
+
+            students.forEach(std => {
+                names.push(std.name);
+                const stdBills = bills ? bills.filter(b => b.studentId === std.id || (b.studentName && b.studentName.toLowerCase() === std.name.toLowerCase())) : [];
+                const totalBilled = stdBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+                billedAmounts.push(totalBilled);
+
+                const totalCollected = std.collections ? std.collections.reduce((sum, c) => sum + c.amount, 0) : 0;
+                collectedAmounts.push(totalCollected);
+            });
+
+            classChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: names,
+                    datasets: [
+                        {
+                            label: 'Total Handed (Billed Stock)',
+                            data: billedAmounts,
+                            backgroundColor: '#60a5fa',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Total Cash Collected',
+                            data: collectedAmounts,
+                            backgroundColor: '#1d4ed8',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { weight: 'bold', size: 11 } } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Currency Value (₹)', font: { weight: 'bold' } } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function refreshGlobalStats() {
+            let totalBilledSum = 0;
+            let totalCollectedSum = 0;
+
+            bills.forEach(b => totalBilledSum += (b.totalAmount || 0));
+            students.forEach(s => {
+                if(s.collections) {
+                    s.collections.forEach(c => totalCollectedSum += c.amount);
+                }
+            });
+
+            const remainingBalance = totalBilledSum - totalCollectedSum;
+
+            if (document.getElementById("stat-revenue")) document.getElementById("stat-revenue").textContent = `₹${totalBilledSum.toFixed(2)}`;
+            if (document.getElementById("stat-collected")) document.getElementById("stat-collected").textContent = `₹${totalCollectedSum.toFixed(2)}`;
+            if (document.getElementById("stat-pending")) document.getElementById("stat-pending").textContent = `₹${remainingBalance.toFixed(2)}`;
+            if (document.getElementById("stat-bills")) document.getElementById("stat-bills").textContent = bills.length;
+        }
+
+        function triggerPrint() {
+            const studentSelect = document.getElementById("bill-student-select");
+            if(!studentSelect || !studentSelect.value) {
+                alert("⚠️ Choose the Active Seller Student before printing!");
+                return;
+            }
+            window.print();
+        }
+
+        function clearAllDataLog() {
+            let pwd = prompt("Enter Password to Factory Reset DB:");
+            if (pwd !== "0000") {
+                alert("Incorrect Password! Factory reset cancelled.");
+                return;
+            }
+            
+            if(confirm("💥 Permanent Wipe All Stored Data?")) {
+                localStorage.removeItem("gurukul10_bills");
+                students = INITIAL_STUDENTS.map(s => ({ ...s, collections: [] }));
+                localStorage.setItem("gurukul10_students", JSON.stringify(students));
+                
+                bills = [];
+                activeProfileStudentId = null; 
+                
+                if (document.getElementById("profile-active-state")) document.getElementById("profile-active-state").classList.add("hidden");
+                if (document.getElementById("profile-empty-state")) document.getElementById("profile-empty-state").classList.remove("hidden");
+                
+                syncBillsToLocalStorage();
+                renderPastBillsLedger();
+                openNewBill();
+                switchTab('home');
+            }
+        }
+    </script>
+</body>
+</html>
