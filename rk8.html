@@ -629,71 +629,86 @@
         }
 
         function saveActiveBill() {
-            const studentSelect = document.getElementById("bill-student-select");
-            const customerInput = document.getElementById("bill-customer-name");
-            
-            const studentId = studentSelect ? studentSelect.value : "";
-            const studentName = studentSelect ? (studentSelect.options[studentSelect.selectedIndex]?.text || "") : "";
-            const customerName = customerInput ? (customerInput.value.trim() || "Cash Sale") : "Cash Sale";
-            
-            if(!studentId) {
-                alert("⚠️ Validation Error: Assign this bill to a student seller!");
-                return;
-            }
+    const studentSelect = document.getElementById("bill-student-select");
+    const customerInput = document.getElementById("bill-customer-name");
+    
+    const studentId = studentSelect ? studentSelect.value : "";
+    const studentName = studentSelect ? (studentSelect.options[studentSelect.selectedIndex]?.text || "") : "";
+    const customerName = customerInput ? (customerInput.value.trim() || "Cash Sale") : "Cash Sale";
+    
+    if(!studentId) {
+        alert("⚠️ Validation Error: Assign this bill to a student seller!");
+        return;
+    }
 
-            const itemsRowsData = [];
-            const rows = document.querySelectorAll("#receipt-table-body tr");
-            let computedGrandTotal = 0;
+    const itemsRowsData = [];
+    const rows = document.querySelectorAll("#receipt-table-body tr");
+    let computedGrandTotal = 0;
 
-            rows.forEach(row => {
-                const descInput = row.querySelector('.row-item-desc');
-                const rateInput = row.querySelector('.row-rate');
-                const qtyInput = row.querySelector('.row-qty');
+    rows.forEach(row => {
+        const descInput = row.querySelector('.row-item-desc');
+        const rateInput = row.querySelector('.row-rate');
+        const qtyInput = row.querySelector('.row-qty');
 
-                const desc = descInput ? descInput.value.trim() : "";
-                const rate = rateInput ? (parseFloat(rateInput.value) || 0) : 0;
-                const qty = qtyInput ? (parseInt(qtyInput.value) || 0) : 0;
+        const desc = descInput ? descInput.value.trim() : "";
+        const rate = rateInput ? (parseFloat(rateInput.value) || 0) : 0;
+        const qty = qtyInput ? (parseInt(qtyInput.value) || 0) : 0;
 
-                if (desc || qty > 0) {
-                    itemsRowsData.push({ desc, rate, qty, amt: rate * qty });
-                    computedGrandTotal += (rate * qty);
-                }
-            });
-
-            if(itemsRowsData.length === 0 || computedGrandTotal === 0) {
-                alert("⚠️ Validation Error: Cannot save an empty bill.");
-                return;
-            }
-
-            const finalBillId = currentEditingBillId || "RV-" + Date.now().toString().slice(-6);
-            const index = bills.findIndex(b => b.id === finalBillId);
-
-            const billRecordPayload = {
-                id: finalBillId,
-                date: document.getElementById("lbl-date")?.textContent || new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'}),
-                studentId,
-                studentName,
-                customerName,
-                items: itemsRowsData,
-                totalAmount: computedGrandTotal
-            };
-
-            if(index > -1) {
-                bills[index] = billRecordPayload;
-            } else {
-                bills.unshift(billRecordPayload);
-            }
-
-            activeProfileStudentId = studentId;
-            syncBillsToLocalStorage();
-            
-            alert(`🎉 Success! Bill reference ${finalBillId} saved.`);
-            currentEditingBillId = null;
-            
-            switchTab('students');
-            showStudentProfile(studentId);
+        if (desc || qty > 0) {
+            itemsRowsData.push({ desc, rate, qty, amt: rate * qty });
+            computedGrandTotal += (rate * qty);
         }
+    });
 
+    if(itemsRowsData.length === 0 || computedGrandTotal === 0) {
+        alert("⚠️ Validation Error: Cannot save an empty bill.");
+        return;
+    }
+
+    const finalBillId = currentEditingBillId || "RV-" + Date.now().toString().slice(-6);
+    const index = bills.findIndex(b => b.id === finalBillId);
+
+    const billRecordPayload = {
+        id: finalBillId,
+        date: document.getElementById("lbl-date")?.textContent || new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'}),
+        studentId,
+        studentName,
+        customerName,
+        items: itemsRowsData,
+        totalAmount: computedGrandTotal
+    };
+
+    if(index > -1) {
+        bills[index] = billRecordPayload;
+    } else {
+        bills.unshift(billRecordPayload);
+    }
+
+    activeProfileStudentId = studentId;
+    syncBillsToLocalStorage();
+    
+    // --- FETCH API CODE ADDED HERE ---
+    // लक्षात ठेवा: खालील URL च्या जागी तुमच्या Apps Script ची खरी Web App URL टाका
+    const appsScriptUrl = 'https://script.google.com/macros/s/AKfycby7xAWhmJKoyt1MkNZR6QJSyuTVCWaoTbTkQ10P-Q7U9R0djsVIBvz_yDUVNZ5t2mQODA/exec'; 
+
+    fetch(appsScriptUrl, {
+        method: 'POST',
+        // CORS एरर टाळण्यासाठी Content-Type 'text/plain' ठेवणे सुरक्षित असते
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8', 
+        },
+        body: JSON.stringify(billRecordPayload)
+    })
+    .then(response => console.log('Bill data sent to Apps Script successfully.'))
+    .catch(error => console.error('Error sending bill data:', error));
+    // ---------------------------------
+
+    alert(`🎉 Success! Bill reference ${finalBillId} saved.`);
+    currentEditingBillId = null;
+    
+    switchTab('students');
+    showStudentProfile(studentId);
+}
         function submitStudentCollection() {
             if(!activeProfileStudentId) return;
             const inputEl = document.getElementById("p-collect-input");
